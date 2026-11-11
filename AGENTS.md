@@ -65,6 +65,9 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - 판매글 읽기는 `lib/product-queries.ts`에, 쓰기·수정·삭제는 `app/products/actions.ts`에 둔다.
 - 로그인이 필요한 새 경로를 만들면 `lib/supabase/proxy.ts`의 `PROTECTED_PATTERNS`(정규식)에 추가한다.
 - textarea 값은 `\r\n`으로 들어오므로 저장하기 전에 `\n`으로 바꾼다.
+- 홈 화면 상단에는 로그인·글쓰기 버튼을 두지 않는다(헤더와 중복). 그 자리는 물품 검색창이다.
+  - 검색은 `?q=`로 하고 **제목만** `ilike`로 찾는다. `%`, `_`, `\`는 이스케이프한다.
+  - 카테고리(`?category=`)와 함께 쓸 수 있다. 칩을 누르면 검색어를 유지하고, 검색하면 고른 카테고리를 유지한다.
 
 ## 5. 개발 환경 (Windows)
 

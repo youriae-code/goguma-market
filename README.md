@@ -59,7 +59,7 @@ npm run dev
 | 기능 | 주소 | 파일 |
 | --- | --- | --- |
 | **C**reate 글쓰기 | `/products/new` | `app/products/new/page.tsx`, 서버 액션 `createProduct` |
-| **R**ead 목록 (카테고리 필터) | `/`, `/?category=living` | `app/page.tsx`, `getProducts()` |
+| **R**ead 목록 (카테고리 필터 + 제목 검색) | `/`, `/?category=living&q=무드등` | `app/page.tsx`, `components/SearchBar.tsx`, `getProducts()` |
 | **R**ead 상세 | `/products/[id]` | `app/products/[id]/page.tsx`, `getProduct()` |
 | **R**ead 내 판매글 | `/mypage` | `app/mypage/page.tsx`, `getProductsBySeller()` |
 | **U**pdate 수정 (판매 상태 포함) | `/products/[id]/edit` | `app/products/[id]/edit/page.tsx`, 서버 액션 `updateProduct` |
