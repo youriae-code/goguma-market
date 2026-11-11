@@ -41,6 +41,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
     - RLS: 조회는 누구나 할 수 있고, insert/update/delete는 본인 글만 할 수 있다.
     - category와 status 값은 DB의 check 제약조건과 `lib/products.ts`의 `CATEGORIES`/`STATUSES`가 **항상 같아야 한다.** 하나를 바꾸면 둘 다 바꾼다.
     - **사진 컬럼은 아직 없다.** 사진은 다음 단계(Supabase Storage)에서 추가한다.
+    - 샘플 판매글 10개(id 6~15)는 테스트 계정 "테스트고구마" 이름으로 들어가 있다. 넣는 SQL과 지우는 SQL은 `supabase/seed-sample-products.sql`에 있다. 사용자가 직접 쓴 글("달콤한고구마")은 건드리지 않는다.
+    - DB가 하나라서 샘플 데이터는 로컬과 운영 사이트에 **동시에** 보인다.
 - 키: 코드와 Vercel에는 **publishable 키만** 쓴다. `service_role`/secret 키는 절대 코드, 커밋, 클라이언트에 넣지 않는다.
 - 인증 설정의 현재 상태:
   - **이메일 인증(Confirm email)은 꺼져 있다.** 가입하면 바로 로그인된다. 켜면 `/auth/confirm` 라우트가 링크를 처리한다. 이때 Supabase의 URL Configuration에 localhost와 배포 주소의 `/auth/confirm`을 추가해야 한다.
