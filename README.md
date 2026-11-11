@@ -128,8 +128,9 @@ RLS: 읽기는 누구나 / 쓰기·수정·삭제는 **본인 글만**. (화면�
 | 개수 표시 | 목록 카드 | 🤍찜 수 · 💬댓글 수 |
 
 - 답글이 달린 댓글을 지우면 "삭제된 댓글이에요" 로 남고, 답글까지 다 지워지면 화면에서 사라져요.
+- 내 댓글·답글은 **수정**할 수 있어요. 고치면 시간 옆에 "· 수정됨" 이 붙어요. (Esc 또는 취소로 닫기)
 - 서버 액션: `app/products/[id]/social-actions.ts` / 조회: `lib/social-queries.ts`
-- 화면: `WishButton.tsx`, `CommentSection.tsx`, `CommentItem.tsx`, `CommentForm.tsx` (`app/products/[id]/`)
+- 화면: `WishButton.tsx`, `CommentSection.tsx`, `CommentItem.tsx`, `CommentForm.tsx`, `CommentEditForm.tsx` (`app/products/[id]/`)
 
 ### DB
 

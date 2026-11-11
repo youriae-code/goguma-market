@@ -87,6 +87,8 @@ export type CommentRow = {
   content: string;
   like_count: number;
   deleted_at: string | null;
+  /** 마지막으로 고친 시각 (안 고쳤으면 null, DB 트리거가 적어요) */
+  edited_at: string | null;
   created_at: string;
   author: { nickname: string } | null;
 };
@@ -100,6 +102,8 @@ export type CommentView = {
   isSeller: boolean;
   content: string;
   isDeleted: boolean;
+  /** 한 번이라도 고쳤으면 "수정됨" 표시 */
+  isEdited: boolean;
   likeCount: number;
   likedByMe: boolean;
   /** "3분 전" 처럼 서버에서 미리 만들어 둔 글자 (서버·브라우저 시간이 달라 생기는 오류 방지) */

@@ -46,6 +46,10 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
     - **칸 단위 권한**: authenticated는 products에 (seller_id, title, description, price, category, status, images)만 insert한다. update는 (title, description, price, category, status, images)만 한다. comments는 insert (product_id, parent_id, content), update (content, deleted_at)만, wishlists·comment_likes는 insert(대상 id)만 할 수 있다. 새 칸을 사용자가 쓰게 하려면 grant를 추가해야 한다.
     - `products_set_updated_at` 트리거는 `before update of title, description, price, category, status, images`다. 개수 칸만 바뀔 때는 "수정됨"이 되지 않는다.
     - 답글 규칙(같은 글, 답글의 답글 금지, 삭제된 댓글에 답글 금지)은 `goguma_check_comment_parent` 트리거가 한국어 에러로 막는다.
+    - 댓글 수정: `comments.edited_at`은 `comments_before_update` 트리거(`goguma_before_comment_update`)가 내용이 바뀔 때만 적는다. 사용자에게는 이 칸의 쓰기 권한이 없다.
+      - 같은 트리거가 삭제된 댓글의 내용 변경이나 되살리기(deleted_at → null)를 막는다.
+      - like_count만 바뀌는 업데이트는 통과시킨다. 그러지 않으면 삭제된 댓글의 좋아요 취소가 실패한다.
+    - ⚠️ 상세 화면 테스트 시 **사용자가 직접 쓴 댓글이 있을 수 있다**(예: 6번 글의 "안녕하세요"). 테스트 스크립트는 첫 번째 댓글을 집지 말고 `[테스트]` 내용으로 찾는다. 정리할 때도 테스트 계정 + `[테스트]` 조건으로만 지운다.
     - 찜은 본인 것만 select할 수 있다(누가 찜했는지는 비밀). 내 글 찜은 RLS가 막는다.
   - ⚠️ **embed 모호성**: products와 profiles는 seller_id 외에 wishlists·comments를 통해서도 이어져 있다. 그래서 `profiles(...)` embed에는 반드시 외래키 이름을 붙인다. 예: `seller:profiles!products_seller_id_fkey(nickname)`, `author:profiles!comments_user_id_fkey(nickname)`. 안 붙이면 "more than one relationship" 에러로 목록이 통째로 안 나온다.
     - 2026-11-11에 4단계 마이그레이션 직후 **DB를 같이 쓰는 운영 사이트가 이 에러로 몇 분간 판매글을 못 보여줬다**. 코드 핫픽스(1710627)로 복구했다.

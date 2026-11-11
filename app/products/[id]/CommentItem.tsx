@@ -4,6 +4,7 @@ import { useCallback, useOptimistic, useState, useTransition } from "react";
 import Link from "next/link";
 import type { CommentView } from "@/lib/products";
 import GogumaIcon from "@/components/GogumaIcon";
+import CommentEditForm from "./CommentEditForm";
 import CommentForm from "./CommentForm";
 import { deleteComment, toggleCommentLike } from "./social-actions";
 
@@ -23,8 +24,10 @@ export default function CommentItem({
   isReply?: boolean;
 }) {
   const [replying, setReplying] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [pending, startTransition] = useTransition();
   const closeReply = useCallback(() => setReplying(false), []);
+  const closeEdit = useCallback(() => setEditing(false), []);
 
   // 좋아요는 누르자마자 바뀌어 보이게 (useOptimistic)
   const [like, toggleLikeOptimistic] = useOptimistic(
@@ -57,18 +60,28 @@ export default function CommentItem({
             {comment.isSeller && !comment.isDeleted && (
               <span className="rounded-full bg-lavender px-2 py-0.5 font-cute text-[11px] text-goguma-dark">판매자</span>
             )}
-            <span className="text-xs text-muted">{comment.timeLabel}</span>
+            <span className="text-xs text-muted">
+              {comment.timeLabel}
+              {comment.isEdited && " · 수정됨"}
+            </span>
           </div>
 
-          {/* 내용 */}
+          {/* 내용 (수정 중이면 입력칸) */}
           {comment.isDeleted ? (
             <p className="mt-1 text-sm text-muted italic">삭제된 댓글이에요</p>
+          ) : editing ? (
+            <CommentEditForm
+              productId={productId}
+              commentId={comment.id}
+              initialContent={comment.content}
+              onClose={closeEdit}
+            />
           ) : (
             <p className="mt-1 text-sm leading-relaxed break-words whitespace-pre-wrap text-ink">{comment.content}</p>
           )}
 
-          {/* 좋아요 · 답글 · 삭제 */}
-          {!comment.isDeleted && (
+          {/* 좋아요 · 답글 · 수정 · 삭제 (고치는 중에는 숨겨요) */}
+          {!comment.isDeleted && !editing && (
             <div className="mt-2 flex items-center gap-3 text-xs">
               {isLoggedIn ? (
                 <button
@@ -101,6 +114,19 @@ export default function CommentItem({
                     💬 답글 달기
                   </Link>
                 ))}
+
+              {comment.isMine && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditing(true);
+                    setReplying(false);
+                  }}
+                  className="cursor-pointer rounded-full px-2 py-1 text-muted transition hover:bg-lavender/60 hover:text-goguma-dark"
+                >
+                  수정
+                </button>
+              )}
 
               {comment.isMine && (
                 <button

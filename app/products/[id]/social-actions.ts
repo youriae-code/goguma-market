@@ -79,6 +79,44 @@ export async function addComment(
   return { doneAt: Date.now() };
 }
 
+// ---------------- 댓글 고치기 ----------------
+// 어느 댓글(commentId)을 고칠지는 bind 로 미리 넣어줘요. 댓글·답글 모두 같은 함수를 써요.
+export async function updateComment(
+  productId: number,
+  commentId: number,
+  _prev: CommentFormState,
+  formData: FormData,
+): Promise<CommentFormState> {
+  const { supabase, userId } = await requireUser(productId);
+
+  const content = String(formData.get("content") ?? "")
+    .replaceAll("\r\n", "\n")
+    .trim();
+  if (content.length < 1) return { error: "내용을 입력해 주세요.", content };
+  if (content.length > COMMENT_MAX) return { error: `댓글은 ${COMMENT_MAX}자까지 쓸 수 있어요.`, content };
+
+  // 내 댓글이고(user_id), 삭제되지 않은 것(deleted_at 비어 있음)만 고쳐요.
+  // "수정됨" 시각(edited_at)은 DB 트리거가 알아서 적어요.
+  const { data, error } = await supabase
+    .from("comments")
+    .update({ content })
+    .eq("id", commentId)
+    .eq("user_id", userId)
+    .is("deleted_at", null)
+    .select("id");
+
+  if (error) {
+    const message = error.message.includes("댓글") ? error.message : `수정하지 못했어요: ${error.message}`;
+    return { error: message, content };
+  }
+  if (!data || data.length === 0) {
+    return { error: "내 댓글이 아니거나 이미 삭제된 댓글이에요.", content };
+  }
+
+  refresh(productId);
+  return { doneAt: Date.now() };
+}
+
 // ---------------- 댓글 지우기 ----------------
 /**
  * - 답글이 달린 댓글: 내용을 지우고 "삭제된 댓글이에요" 로 남겨요. (답글 대화가 끊기지 않게)

@@ -56,7 +56,7 @@ export async function getComments(
     .from("comments")
     // 댓글 작성자 닉네임도 "comments.user_id" 연결로 가져온다고 외래키 이름으로 알려줘요.
     .select(
-      "id, product_id, user_id, parent_id, content, like_count, deleted_at, created_at, author:profiles!comments_user_id_fkey(nickname)",
+      "id, product_id, user_id, parent_id, content, like_count, deleted_at, edited_at, created_at, author:profiles!comments_user_id_fkey(nickname)",
     )
     .eq("product_id", productId)
     .order("created_at", { ascending: true });
@@ -85,6 +85,7 @@ export async function getComments(
     isSeller: row.user_id === sellerId,
     content: row.deleted_at ? "" : row.content,
     isDeleted: Boolean(row.deleted_at),
+    isEdited: Boolean(row.edited_at) && !row.deleted_at,
     likeCount: row.like_count,
     likedByMe: liked.has(row.id),
     timeLabel: timeAgo(row.created_at),
