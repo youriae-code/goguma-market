@@ -46,9 +46,16 @@ export default function ProductCard({ product }: { product: ProductSummary }) {
       <div className="space-y-1 p-4">
         <h3 className="truncate text-ink">{product.title}</h3>
         <p className="font-cute text-lg text-goguma-dark">{formatPrice(product.price)}</p>
-        <p className="truncate text-xs text-muted">
-          {product.seller?.nickname ?? "이웃"} · {timeAgo(product.created_at)}
-        </p>
+        <div className="flex items-center justify-between gap-2 text-xs text-muted">
+          <p className="min-w-0 truncate">
+            {product.seller?.nickname ?? "이웃"} · {timeAgo(product.created_at)}
+          </p>
+          {/* 찜·댓글이 있을 때만 개수를 보여줘요 */}
+          <p className="flex shrink-0 gap-1.5">
+            {product.wish_count > 0 && <span aria-label={`찜 ${product.wish_count}`}>🤍{product.wish_count}</span>}
+            {product.comment_count > 0 && <span aria-label={`댓글 ${product.comment_count}`}>💬{product.comment_count}</span>}
+          </p>
+        </div>
       </div>
     </Link>
   );

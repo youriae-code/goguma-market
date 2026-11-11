@@ -41,6 +41,15 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
     - RLS: 조회는 누구나 할 수 있고, insert/update/delete는 본인 글만 할 수 있다.
     - category와 status 값은 DB의 check 제약조건과 `lib/products.ts`의 `CATEGORIES`/`STATUSES`가 **항상 같아야 한다.** 하나를 바꾸면 둘 다 바꾼다.
     - `images text[]`(최대 10개, check 제약조건): Storage 경로 목록이다. 첫 번째가 대표 사진이다. 샘플 데이터는 사진 없이 `{}`이다.
+  - 4단계 테이블: `wishlists`(PK user_id+product_id), `comments`(parent_id로 1단계 답글, deleted_at으로 소프트 삭제), `comment_likes`(PK user_id+comment_id)
+    - 개수 칸 `products.wish_count`·`products.comment_count`·`comments.like_count`는 security definer 트리거(`goguma_count_*`)가 관리한다. 앱 코드에서 직접 바꾸지 않는다.
+    - **칸 단위 권한**: authenticated는 products에 (seller_id, title, description, price, category, status, images)만 insert한다. update는 (title, description, price, category, status, images)만 한다. comments는 insert (product_id, parent_id, content), update (content, deleted_at)만, wishlists·comment_likes는 insert(대상 id)만 할 수 있다. 새 칸을 사용자가 쓰게 하려면 grant를 추가해야 한다.
+    - `products_set_updated_at` 트리거는 `before update of title, description, price, category, status, images`다. 개수 칸만 바뀔 때는 "수정됨"이 되지 않는다.
+    - 답글 규칙(같은 글, 답글의 답글 금지, 삭제된 댓글에 답글 금지)은 `goguma_check_comment_parent` 트리거가 한국어 에러로 막는다.
+    - 찜은 본인 것만 select할 수 있다(누가 찜했는지는 비밀). 내 글 찜은 RLS가 막는다.
+  - ⚠️ **embed 모호성**: products와 profiles는 seller_id 외에 wishlists·comments를 통해서도 이어져 있다. 그래서 `profiles(...)` embed에는 반드시 외래키 이름을 붙인다. 예: `seller:profiles!products_seller_id_fkey(nickname)`, `author:profiles!comments_user_id_fkey(nickname)`. 안 붙이면 "more than one relationship" 에러로 목록이 통째로 안 나온다.
+    - 2026-11-11에 4단계 마이그레이션 직후 **DB를 같이 쓰는 운영 사이트가 이 에러로 몇 분간 판매글을 못 보여줬다**. 코드 핫픽스(1710627)로 복구했다.
+    - 교훈: 운영과 DB를 공유하므로, 기존 테이블 사이에 새 관계를 만드는 마이그레이션은 **배포된 코드가 그대로 동작하는지 먼저 확인**한다. 필요하면 코드 수정을 먼저 배포한다.
   - Storage 버킷 `goguma-products`(3단계): 공개 읽기, 5MB, jpeg/png/webp/gif만 받는다.
     - 경로 규칙은 `{auth.uid()}/{uuid}.jpg`이다. storage.objects 정책(`goguma: ...` 3개)이 **내 폴더에서만** insert/select/delete를 허용한다. remove()에는 select 권한도 필요하다.
     - Storage 파일은 SQL로 직접 지울 수 없다(`storage.protect_delete`). 반드시 Storage API(`.remove()`)를 쓴다.

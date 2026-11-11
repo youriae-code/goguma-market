@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { logout } from "@/app/auth/actions";
 import { getCurrentUser } from "@/lib/auth";
 import { getProductsBySeller } from "@/lib/product-queries";
+import { getWishedProducts } from "@/lib/social-queries";
 import GogumaIcon from "@/components/GogumaIcon";
 import ProductGrid from "@/components/ProductGrid";
 
@@ -39,7 +40,10 @@ async function MyPageContent() {
   const user = await getCurrentUser();
   if (!user) redirect("/login?next=/mypage");
 
-  const myProducts = await getProductsBySeller(user.id);
+  const [myProducts, wishedProducts] = await Promise.all([
+    getProductsBySeller(user.id),
+    getWishedProducts(user.id),
+  ]);
 
   const joined = user.createdAt
     ? new Date(user.createdAt).toLocaleDateString("ko-KR", {
@@ -90,6 +94,16 @@ async function MyPageContent() {
           </Link>
         </div>
         <ProductGrid products={myProducts} emptyText="아직 올린 판매글이 없어요" />
+
+        {/* 찜한 물건 */}
+        <h2 className="mt-10 mb-4 font-cute text-2xl text-ink">
+          찜한 물건 <span className="text-[#e0607a]">{wishedProducts.length}</span>
+        </h2>
+        <ProductGrid
+          products={wishedProducts}
+          emptyText="아직 찜한 물건이 없어요"
+          emptyAction={<p className="text-sm text-muted">마음에 드는 물건의 🤍 찜 버튼을 눌러 보세요!</p>}
+        />
       </section>
     </div>
   );

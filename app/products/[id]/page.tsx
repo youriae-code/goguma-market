@@ -5,9 +5,12 @@ import { notFound } from "next/navigation";
 import { getCurrentUserId } from "@/lib/auth";
 import { getProduct, parseProductId } from "@/lib/product-queries";
 import { formatPrice, getCategory, getStatus, timeAgo } from "@/lib/products";
+import { isWished } from "@/lib/social-queries";
 import GogumaIcon from "@/components/GogumaIcon";
+import CommentSection from "./CommentSection";
 import DeleteButton from "./DeleteButton";
 import ImageGallery from "./ImageGallery";
+import WishButton from "./WishButton";
 
 export const metadata: Metadata = { title: "판매글 | 고구마마켓" };
 
@@ -32,6 +35,7 @@ async function ProductDetail({ params }: Pick<PageProps<"/products/[id]">, "para
 
   const [product, userId] = await Promise.all([getProduct(id), getCurrentUserId()]);
   if (!product) notFound();
+  const wished = await isWished(userId, product.id);
 
   const category = getCategory(product.category);
   const status = getStatus(product.status);
@@ -39,6 +43,7 @@ async function ProductDetail({ params }: Pick<PageProps<"/products/[id]">, "para
   const isEdited = product.updated_at !== product.created_at;
 
   return (
+    <>
     <article className="overflow-hidden rounded-[2rem] border-2 border-white bg-white/80 shadow-soft">
       {/* 사진이 있으면 갤러리, 없으면 카테고리 이모지 */}
       {product.images.length > 0 ? (
@@ -74,7 +79,16 @@ async function ProductDetail({ params }: Pick<PageProps<"/products/[id]">, "para
             {category.name} · {timeAgo(product.created_at)}
             {isEdited && " · 수정됨"}
           </p>
-          <p className="mt-3 font-cute text-3xl text-goguma-dark">{formatPrice(product.price)}</p>
+          {/* 가격 + 찜하기 */}
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+            <p className="font-cute text-3xl text-goguma-dark">{formatPrice(product.price)}</p>
+            <WishButton
+              productId={product.id}
+              wished={wished}
+              count={product.wish_count}
+              mode={!userId ? "guest" : isMine ? "mine" : "user"}
+            />
+          </div>
           {/* whitespace-pre-wrap: 사용자가 입력한 줄바꿈을 그대로 보여줘요 */}
           <p className="mt-6 leading-relaxed break-words whitespace-pre-wrap text-ink">{product.description}</p>
         </div>
@@ -93,6 +107,12 @@ async function ProductDetail({ params }: Pick<PageProps<"/products/[id]">, "para
         )}
       </div>
     </article>
+
+    {/* 댓글은 따로 불러와서, 글 본문이 먼저 보이고 댓글이 뒤따라 보여요 */}
+    <Suspense fallback={<p className="mt-6 py-8 text-center text-sm text-muted">댓글을 불러오는 중… 💬</p>}>
+      <CommentSection productId={product.id} sellerId={product.seller_id} userId={userId} count={product.comment_count} />
+    </Suspense>
+    </>
   );
 }
 
