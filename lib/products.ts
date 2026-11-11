@@ -56,6 +56,10 @@ export type Product = {
   status: ProductStatus;
   /** Storage 안의 사진 경로 목록. 첫 번째가 대표 사진 */
   images: string[];
+  /** 찜한 사람 수 (DB 트리거가 자동으로 세요) */
+  wish_count: number;
+  /** 댓글 수 (삭제된 댓글 제외, DB 트리거가 자동으로 세요) */
+  comment_count: number;
   created_at: string;
   updated_at: string;
   seller: { nickname: string } | null;
@@ -64,11 +68,44 @@ export type Product = {
 /** 목록에 필요한 컬럼만 (설명은 길어서 빼요) */
 export type ProductSummary = Omit<Product, "description" | "updated_at" | "seller_id">;
 
-// Supabase select 에 넣는 문자열. seller:profiles(nickname) 은 "작성자 닉네임을 같이 가져와" 라는 뜻이에요.
-export const PRODUCT_SUMMARY_COLUMNS =
-  "id, title, price, category, status, images, created_at, seller:profiles(nickname)";
-export const PRODUCT_DETAIL_COLUMNS =
-  "id, seller_id, title, description, price, category, status, images, created_at, updated_at, seller:profiles(nickname)";
+// Supabase select 에 넣는 문자열. seller:profiles!...(nickname) 은 "작성자 닉네임을 같이 가져와" 라는 뜻이에요.
+// ⚠️ products 와 profiles 는 판매자(seller_id) 말고도 찜(wishlists)·댓글(comments) 표를 통해서도 이어져 있어요.
+//    그래서 "어느 연결로 가져올지" 를 외래키 이름(products_seller_id_fkey)으로 꼭 알려줘야 해요.
+const SELLER = "seller:profiles!products_seller_id_fkey(nickname)";
+export const PRODUCT_SUMMARY_COLUMNS = `id, title, price, category, status, images, wish_count, comment_count, created_at, ${SELLER}`;
+export const PRODUCT_DETAIL_COLUMNS = `id, seller_id, title, description, price, category, status, images, wish_count, comment_count, created_at, updated_at, ${SELLER}`;
+
+// ---------------- 댓글 ----------------
+export const COMMENT_MAX = 500;
+
+/** DB 의 comments 한 줄 + 작성자 닉네임 */
+export type CommentRow = {
+  id: number;
+  product_id: number;
+  user_id: string;
+  parent_id: number | null;
+  content: string;
+  like_count: number;
+  deleted_at: string | null;
+  created_at: string;
+  author: { nickname: string } | null;
+};
+
+/** 화면에 그리기 좋게 정리한 댓글 (답글 목록 포함) */
+export type CommentView = {
+  id: number;
+  authorName: string;
+  isMine: boolean;
+  /** 판매글 작성자가 단 댓글이면 "판매자" 배지를 보여줘요 */
+  isSeller: boolean;
+  content: string;
+  isDeleted: boolean;
+  likeCount: number;
+  likedByMe: boolean;
+  /** "3분 전" 처럼 서버에서 미리 만들어 둔 글자 (서버·브라우저 시간이 달라 생기는 오류 방지) */
+  timeLabel: string;
+  replies: CommentView[];
+};
 
 // ---------------- 사진 ----------------
 /** 사진을 저장하는 Supabase Storage 버킷 이름 */
