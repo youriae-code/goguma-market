@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+/* 🍠 고구마마켓 컬러 — 파스텔 & 따뜻한 톤 */
+@theme {
+  --color-cream: #fff8ef;
+  --color-cream-deep: #fdeedd;
+  --color-peach: #ffdcc8;
+  --color-butter: #ffe9a8;
+  --color-lavender: #ebdfff;
+  --color-rose: #ff9eaa;
+  --color-goguma: #9b6bc9;
+  --color-goguma-dark: #7a4fa8;
+  --color-ink: #4a3b47;
+  --color-muted: #9a8a94;
+
+  --font-sans: var(--font-gowun), "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-cute: var(--font-jua), var(--font-gowun), sans-serif;
+
+  --shadow-soft: 0 8px 24px -8px rgb(155 107 201 / 0.25);
+  --shadow-pop: 0 4px 0 0 #7a4fa8;
+}
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background-color: var(--color-cream);
+  background-image:
+    radial-gradient(circle at 10% 0%, #ffe9a855 0, transparent 35%),
+    radial-gradient(circle at 95% 20%, #ebdfff88 0, transparent 30%),
+    radial-gradient(circle at 50% 100%, #ffdcc866 0, transparent 40%);
+  background-attachment: fixed;
+  color: var(--color-ink);
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-6deg); }
+  50% { transform: rotate(6deg); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
