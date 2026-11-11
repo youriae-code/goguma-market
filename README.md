@@ -83,6 +83,9 @@ npm run dev
 | `category` | `digital`, `furniture`, `clothes`, `books`, `kids`, `hobby`, `living`, `pets`, `etc` |
 | `status` | `selling`(판매중) / `reserved`(예약중) / `sold`(거래완료) |
 | `created_at`, `updated_at` | 작성·수정 시각 (`updated_at` 은 트리거가 자동 갱신) |
+| `title_search` | 검색용: 제목에서 띄어쓰기를 뺀 글자 (DB 가 자동 계산하는 generated column) |
+
+**검색:** 띄어쓰기를 무시하고, 검색어의 모든 단어가 제목에 들어간 글을 찾아요. 예) "패딩", "경량 패딩", "유니클로 패딩" → "유니클로 경량패딩 M"
 
 RLS: 읽기는 누구나 / 쓰기·수정·삭제는 **본인 글만**. (화면에서 버튼을 숨기는 것만으로는 부족하고, DB 가 최종으로 막아줘요.)
 

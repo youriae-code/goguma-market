@@ -4,6 +4,13 @@
 --
 -- 실행 방법: Supabase 대시보드 → SQL Editor 에 붙여넣고 실행
 -- 다시 지우려면 맨 아래 주석의 delete 문을 실행하세요.
+--
+-- 📷 사진: 이 SQL 은 글만 만들어요. 지금 DB 의 샘플 글(id 6~15)에는 1~3장씩 사진이 붙어 있어요.
+--    사진은 브라우저 canvas 로 그린 파스텔 일러스트(이모지 + 라벨)이고,
+--    Storage 버킷 goguma-products 의 테스트 계정 폴더(e384526f-.../)에 있어요.
+--    ⚠️ 아래 delete 문으로 글만 지우면 사진 파일은 Storage 에 남아요.
+--       사진까지 지우려면 앱에서 테스트 계정으로 로그인해 글을 하나씩 삭제하거나,
+--       Supabase 대시보드 → Storage 에서 해당 폴더를 지우세요. (Storage 파일은 SQL 로 직접 못 지워요)
 
 insert into public.products (seller_id, title, description, price, category, status, created_at, updated_at)
 select

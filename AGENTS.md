@@ -49,6 +49,9 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
     - 사용자가 사진을 올려 두고 저장하지 않은 채 떠나면 고아 파일이 남을 수 있다. (현재는 정리 기능이 없다)
     - 샘플 판매글 10개(id 6~15)는 테스트 계정 "테스트고구마" 이름으로 들어가 있다. 넣는 SQL과 지우는 SQL은 `supabase/seed-sample-products.sql`에 있다. 사용자가 직접 쓴 글("달콤한고구마")은 건드리지 않는다.
     - DB가 하나라서 샘플 데이터는 로컬과 운영 사이트에 **동시에** 보인다.
+    - 샘플 글에는 사진이 1~3장씩(총 17장) 있다. 실제 사진이 아니라 canvas로 그린 파스텔 일러스트(이모지 + 라벨)다. 테스트 계정 폴더에 업로드되어 있다.
+    - 샘플 사진은 localhost에서 테스트 계정으로 로그인한 상태로 올렸다. 브라우저 세션 토큰으로 Storage REST에 POST하고, SQL로 `images`를 채웠다.
+    - SQL로 updated_at을 되돌릴 때는 `products_set_updated_at` 트리거를 잠깐 disable했다가 다시 enable해야 한다. 안 그러면 트리거가 now()로 덮어써서 "수정됨"으로 보인다.
 - 키: 코드와 Vercel에는 **publishable 키만** 쓴다. `service_role`/secret 키는 절대 코드, 커밋, 클라이언트에 넣지 않는다.
 - 인증 설정의 현재 상태:
   - **이메일 인증(Confirm email)은 꺼져 있다.** 가입하면 바로 로그인된다. 켜면 `/auth/confirm` 라우트가 링크를 처리한다. 이때 Supabase의 URL Configuration에 localhost와 배포 주소의 `/auth/confirm`을 추가해야 한다.
@@ -74,7 +77,9 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - 로그인이 필요한 새 경로를 만들면 `lib/supabase/proxy.ts`의 `PROTECTED_PATTERNS`(정규식)에 추가한다.
 - textarea 값은 `\r\n`으로 들어오므로 저장하기 전에 `\n`으로 바꾼다.
 - 홈 화면 상단에는 로그인·글쓰기 버튼을 두지 않는다(헤더와 중복). 그 자리는 물품 검색창이다.
-  - 검색은 `?q=`로 하고 **제목만** `ilike`로 찾는다. `%`, `_`, `\`는 이스케이프한다.
+  - 검색은 `?q=`로 하고 **제목만** 찾는다. 띄어쓰기는 무시한다.
+    - DB의 generated column `products.title_search`(제목에서 공백을 모두 뺀 값)에 단어마다 `ilike`를 건다(AND). 그래서 "롱패딩"으로 "롱 패딩"을, "유니클로 패딩"으로 "유니클로 경량패딩"을 찾는다.
+    - 검색어는 `normalize("NFC")` 후 공백으로 나눈다(최대 5단어). `%`, `_`, `\`는 이스케이프한다.
   - 카테고리(`?category=`)와 함께 쓸 수 있다. 칩을 누르면 검색어를 유지하고, 검색하면 고른 카테고리를 유지한다.
 
 ## 5. 개발 환경 (Windows)

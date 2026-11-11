@@ -13,9 +13,19 @@ import {
  */
 
 /**
+ * 검색어를 단어로 나눠요. 띄어쓰기는 검색 결과에 영향을 주지 않아요.
+ * "유니클로  패딩" → ["유니클로", "패딩"]
+ * normalize("NFC"): 맥·아이폰에서 복사한 한글이 자음·모음이 분리된 형태(NFD)일 때가 있어서 하나로 맞춰요.
+ */
+function toSearchWords(keyword: string) {
+  return keyword.normalize("NFC").split(/\s+/).filter(Boolean).slice(0, 5);
+}
+
+/**
  * 최신 판매글 목록.
  * - category 를 주면 그 카테고리만
- * - keyword 를 주면 제목에 그 단어가 들어간 글만 (대소문자 구분 없이)
+ * - keyword 를 주면 제목에 검색어의 **모든 단어**가 들어간 글만 (대소문자·띄어쓰기 무시)
+ *   예) "패딩", "경량패딩", "경량 패딩", "유니클로 패딩" → 모두 "유니클로 경량패딩 M" 을 찾아요.
  */
 export async function getProducts({
   category,
@@ -29,10 +39,12 @@ export async function getProducts({
     .limit(60);
 
   if (category) query = query.eq("category", category);
-  if (keyword) {
+  // title_search 는 제목에서 띄어쓰기를 모두 뺀 칸이에요 (DB 가 자동으로 만들어요).
+  // 단어마다 ilike 를 하나씩 붙이면 "모든 단어가 들어간 글" (AND) 이 돼요.
+  for (const word of toSearchWords(keyword ?? "")) {
     // ilike 에서 % 와 _ 는 "아무 글자" 라는 특수문자라서, 사용자가 입력하면 글자 그대로 찾도록 \ 를 붙여요.
-    const escaped = keyword.replace(/[\\%_]/g, (ch) => `\\${ch}`);
-    query = query.ilike("title", `%${escaped}%`);
+    const escaped = word.replace(/[\\%_]/g, (ch) => `\\${ch}`);
+    query = query.ilike("title_search", `%${escaped}%`);
   }
 
   const { data, error } = await query;
