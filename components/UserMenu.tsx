@@ -25,10 +25,18 @@ export default async function UserMenu() {
   return (
     <nav className="flex min-w-0 items-center gap-1.5 text-sm whitespace-nowrap sm:gap-2">
       <Link
-        href="/mypage"
-        className="max-w-28 truncate rounded-full bg-lavender px-3 py-2 font-cute text-goguma-dark transition hover:bg-goguma hover:text-white sm:max-w-44 sm:px-4"
+        href="/products/new"
+        className="rounded-full bg-goguma px-3 py-2 font-cute text-white shadow-pop transition hover:translate-y-0.5 hover:shadow-none sm:px-4"
       >
-        {user.nickname}님 🍠
+        ✏️<span className="hidden sm:inline"> 글쓰기</span>
+      </Link>
+      <Link
+        href="/mypage"
+        aria-label="내 정보"
+        className="max-w-44 truncate rounded-full bg-lavender px-3 py-2 font-cute text-goguma-dark transition hover:bg-goguma hover:text-white sm:px-4"
+      >
+        {/* 휴대폰처럼 좁은 화면에서는 닉네임을 숨기고 🍠 만 보여줘요 */}
+        <span className="hidden sm:inline">{user.nickname}님 </span>🍠
       </Link>
       <form action={logout}>
         <button className="cursor-pointer rounded-full border-2 border-goguma/40 bg-white px-3 py-1.5 font-cute text-goguma-dark transition hover:border-goguma hover:bg-cream-deep sm:px-4">

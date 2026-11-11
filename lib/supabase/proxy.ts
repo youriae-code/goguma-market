@@ -1,8 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-/** 로그인해야 들어갈 수 있는 경로 */
-const PROTECTED_PATHS = ["/mypage"];
+/**
+ * 로그인해야 들어갈 수 있는 경로 (정규식)
+ * - /mypage
+ * - /products/new        글쓰기
+ * - /products/123/edit   글 수정
+ */
+const PROTECTED_PATTERNS = [/^\/mypage/, /^\/products\/new$/, /^\/products\/[^/]+\/edit$/];
 /** 로그인한 사람은 볼 필요 없는 경로 */
 const GUEST_ONLY_PATHS = ["/login", "/signup"];
 
@@ -42,7 +47,7 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  if (!isLoggedIn && PROTECTED_PATHS.some((p) => pathname.startsWith(p))) {
+  if (!isLoggedIn && PROTECTED_PATTERNS.some((pattern) => pattern.test(pathname))) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", pathname);

@@ -20,8 +20,8 @@ npm run dev
 ## 단계별 진행 상황
 
 - [x] **1단계: 회원가입 / 로그인 / 로그아웃**
-- [ ] 2단계: 상품 등록 · 목록 · 상세
-- [ ] 3단계: 이미지 업로드 (Supabase Storage)
+- [x] **2단계: 판매글 CRUD** (쓰기 · 목록/상세 · 수정 · 삭제, 사진 없이)
+- [ ] 3단계: 사진 업로드 (Supabase Storage)
 - [ ] 4단계: 찜하기, 채팅 …
 
 ## 1단계에서 만든 것
@@ -54,7 +54,40 @@ npm run dev
   인증을 켜면 `/auth/confirm` 이 링크를 처리하니, Supabase 대시보드 → Authentication → URL Configuration 의
   Redirect URLs 에 `http://localhost:3000/auth/confirm` (배포 후엔 배포 주소도) 를 추가하세요.
 
+## 2단계에서 만든 것 — 판매글 CRUD
+
+| 기능 | 주소 | 파일 |
+| --- | --- | --- |
+| **C**reate 글쓰기 | `/products/new` | `app/products/new/page.tsx`, 서버 액션 `createProduct` |
+| **R**ead 목록 (카테고리 필터) | `/`, `/?category=living` | `app/page.tsx`, `getProducts()` |
+| **R**ead 상세 | `/products/[id]` | `app/products/[id]/page.tsx`, `getProduct()` |
+| **R**ead 내 판매글 | `/mypage` | `app/mypage/page.tsx`, `getProductsBySeller()` |
+| **U**pdate 수정 (판매 상태 포함) | `/products/[id]/edit` | `app/products/[id]/edit/page.tsx`, 서버 액션 `updateProduct` |
+| **D**elete 삭제 | 상세 화면의 삭제 버튼 | `app/products/[id]/DeleteButton.tsx`, 서버 액션 `deleteProduct` |
+
+- `lib/products.ts` — 카테고리·판매 상태 목록, 타입, 가격/시간 표시 함수 (서버·브라우저 공용)
+- `lib/product-queries.ts` — DB에서 판매글을 읽는 함수 (서버 전용)
+- `app/products/actions.ts` — 쓰기·수정·삭제 서버 액션 + 입력값 검사
+- `app/products/ProductForm.tsx` — 글쓰기와 수정에 같이 쓰는 폼
+- `components/ProductCard.tsx`, `ProductGrid.tsx` — 목록 카드 (사진 자리엔 카테고리 이모지)
+
+### DB: `public.products`
+
+| 컬럼 | 설명 |
+| --- | --- |
+| `id` | 글 번호 (자동 증가) |
+| `seller_id` | 작성자 (`profiles.id`), 기본값 `auth.uid()` |
+| `title` | 제목 2~40자 |
+| `description` | 설명 1~2000자 |
+| `price` | 가격 0~1억 원 (0원 = 나눔) |
+| `category` | `digital`, `furniture`, `clothes`, `books`, `kids`, `hobby`, `living`, `pets`, `etc` |
+| `status` | `selling`(판매중) / `reserved`(예약중) / `sold`(거래완료) |
+| `created_at`, `updated_at` | 작성·수정 시각 (`updated_at` 은 트리거가 자동 갱신) |
+
+RLS: 읽기는 누구나 / 쓰기·수정·삭제는 **본인 글만**. (화면에서 버튼을 숨기는 것만으로는 부족하고, DB 가 최종으로 막아줘요.)
+
 ## 배포
 
-가계부와 별도의 주소로 배포할 예정이에요. (예: Vercel 새 프로젝트)
-배포할 때 환경 변수 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` 를 등록하면 돼요.
+Vercel 에 가계부와 **별도 주소**로 배포했어요: https://goguma-market-pink.vercel.app
+GitHub `main` 브랜치에 푸시하면 자동으로 다시 배포돼요.
+환경 변수 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` 는 Vercel 에 등록되어 있어요.

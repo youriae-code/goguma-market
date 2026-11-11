@@ -8,6 +8,13 @@ export type CurrentUser = {
   createdAt: string | null;
 };
 
+/** 지금 로그인한 사용자의 id 만 필요할 때 (닉네임 조회 없이 가볍게) */
+export async function getCurrentUserId(): Promise<string | null> {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  return data?.claims?.sub ?? null;
+}
+
 /**
  * 지금 로그인한 사용자 정보 (로그인 안 했으면 null).
  * 로그인 확인 + 프로필 조회를 한곳에 모아두면 여러 화면에서 재사용하기 편해요.
