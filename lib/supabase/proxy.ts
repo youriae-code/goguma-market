@@ -6,8 +6,9 @@ import { NextResponse, type NextRequest } from "next/server";
  * - /mypage
  * - /products/new        글쓰기
  * - /products/123/edit   글 수정
+ * - /chats, /chats/123   채팅
  */
-const PROTECTED_PATTERNS = [/^\/mypage/, /^\/products\/new$/, /^\/products\/[^/]+\/edit$/];
+const PROTECTED_PATTERNS = [/^\/mypage/, /^\/products\/new$/, /^\/products\/[^/]+\/edit$/, /^\/chats/];
 /** 로그인한 사람은 볼 필요 없는 경로 */
 const GUEST_ONLY_PATHS = ["/login", "/signup"];
 

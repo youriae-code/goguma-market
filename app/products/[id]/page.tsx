@@ -7,6 +7,7 @@ import { getProduct, parseProductId } from "@/lib/product-queries";
 import { formatPrice, getCategory, getStatus, timeAgo } from "@/lib/products";
 import { isWished } from "@/lib/social-queries";
 import GogumaIcon from "@/components/GogumaIcon";
+import ChatButton from "./ChatButton";
 import CommentSection from "./CommentSection";
 import DeleteButton from "./DeleteButton";
 import ImageGallery from "./ImageGallery";
@@ -93,9 +94,14 @@ async function ProductDetail({ params }: Pick<PageProps<"/products/[id]">, "para
           <p className="mt-6 leading-relaxed break-words whitespace-pre-wrap text-ink">{product.description}</p>
         </div>
 
+        {/* 1:1 채팅 */}
+        <div className="mt-8">
+          <ChatButton productId={product.id} userId={userId} isMine={isMine} />
+        </div>
+
         {/* 내 글이면 수정·삭제 버튼 */}
         {isMine && (
-          <div className="mt-8 flex gap-3 border-t border-peach/70 pt-6">
+          <div className="mt-6 flex gap-3 border-t border-peach/70 pt-6">
             <Link
               href={`/products/${product.id}/edit`}
               className="flex-1 rounded-2xl bg-goguma py-3 text-center font-cute text-white shadow-pop transition hover:translate-y-0.5 hover:shadow-none"

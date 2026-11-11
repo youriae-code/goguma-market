@@ -54,6 +54,15 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   - ⚠️ **embed 모호성**: products와 profiles는 seller_id 외에 wishlists·comments를 통해서도 이어져 있다. 그래서 `profiles(...)` embed에는 반드시 외래키 이름을 붙인다. 예: `seller:profiles!products_seller_id_fkey(nickname)`, `author:profiles!comments_user_id_fkey(nickname)`. 안 붙이면 "more than one relationship" 에러로 목록이 통째로 안 나온다.
     - 2026-11-11에 4단계 마이그레이션 직후 **DB를 같이 쓰는 운영 사이트가 이 에러로 몇 분간 판매글을 못 보여줬다**. 코드 핫픽스(1710627)로 복구했다.
     - 교훈: 운영과 DB를 공유하므로, 기존 테이블 사이에 새 관계를 만드는 마이그레이션은 **배포된 코드가 그대로 동작하는지 먼저 확인**한다. 필요하면 코드 수정을 먼저 배포한다.
+  - 5단계 채팅: `chat_rooms`(unique product_id+buyer_id, check buyer≠seller), `chat_messages`(read_at)
+    - seller_id는 `chat_rooms_fill_seller` 트리거(security definer)가 products에서 채운다. 사용자는 chat_rooms에 `insert (product_id)`만 할 수 있다.
+    - last_message와 last_message_at은 `chat_messages_update_room` 트리거가 갱신한다.
+    - RLS 도우미는 `goguma_is_chat_member(room_id)`(security **invoker**)다. definer로 두면 advisor가 경고한다. chat_rooms의 RLS가 이미 내 방만 보여 주므로 invoker로 충분하다.
+    - chat_messages 권한: insert (room_id, content), update (read_at). 읽음 처리는 받은 사람만 할 수 있다(sender_id ≠ auth.uid()).
+    - `chat_messages`는 `supabase_realtime` publication에 있다. 클라이언트(`ChatRoom.tsx`)는 `postgres_changes` INSERT/UPDATE를 `room_id=eq.N` 필터로 구독한다. RLS 덕분에 참여자에게만 전달된다.
+    - chat_rooms는 profiles와 두 번 이어져 있다. embed할 때는 `buyer:profiles!chat_rooms_buyer_id_fkey`, `seller:profiles!chat_rooms_seller_id_fkey`를 쓴다.
+    - 채팅 시간 표시는 `Intl.DateTimeFormat`에 `timeZone: "Asia/Seoul"`을 고정한다. 서버(UTC)와 브라우저(KST)의 결과가 달라 생기는 hydration 오류를 막기 위해서다.
+    - Enter 전송 시 `e.nativeEvent.isComposing`을 확인한다. 한글을 조합하는 중에 Enter를 누르면 마지막 글자가 중복 전송되기 때문이다.
   - Storage 버킷 `goguma-products`(3단계): 공개 읽기, 5MB, jpeg/png/webp/gif만 받는다.
     - 경로 규칙은 `{auth.uid()}/{uuid}.jpg`이다. storage.objects 정책(`goguma: ...` 3개)이 **내 폴더에서만** insert/select/delete를 허용한다. remove()에는 select 권한도 필요하다.
     - Storage 파일은 SQL로 직접 지울 수 없다(`storage.protect_delete`). 반드시 Storage API(`.remove()`)를 쓴다.
@@ -106,6 +115,12 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - 확인 순서: `npm run lint` → `npx tsc --noEmit` → `npm run build`.
 - 이 PC의 시계는 DB(Supabase)보다 약 2분 빠르다. 로컬에서 방금 쓴 글이 "2분 전"으로 보여도 버그가 아니다. Vercel에서는 정상으로 보인다.
 - `next.config.ts`를 바꾸면 개발 서버를 재시작해야 반영된다.
+- **두 계정 동시 테스트(채팅)**: 테스트고구마는 `http://localhost:3000`, 테스트감자는 `http://127.0.0.1:3000`으로 연다. 두 주소는 쿠키가 따로라 각각 로그인 상태가 유지된다.
+  - 두 번째 테스트 계정(테스트감자, goguma.tester2@example.com)의 비밀번호는 `.env.test.local`의 TEST2_*에 있다.
+  - 127.0.0.1을 쓰려면 `next.config.ts`에 `allowedDevOrigins: ["127.0.0.1"]`가 필요하다(이미 설정됨).
+- 브라우저 패널이 숨겨져 있으면 rAF가 멈춘다. 그러면 Suspense 경계 안의 컴포넌트가 **hydration되지 않아** useEffect가 실행되지 않는다(예: 채팅 읽음 처리).
+  - 테스트할 때는 `window.requestAnimationFrame = cb => setTimeout(() => cb(performance.now()), 16)`으로 바꾼다.
+  - 그다음 `$RV($RB)`를 실행하고, 주석 노드의 `_reactRetry()`를 직접 호출한다.
 - 사진 업로드를 브라우저로 테스트할 때는 canvas로 이미지를 만든다. 그다음 `DataTransfer`로 `input[type=file].files`에 넣고 `change` 이벤트를 보낸다.
 - 브라우저로 삭제를 테스트할 때는 `confirm()` 창이 뜬다. 자동 테스트에서는 `window.confirm = () => true`로 넘긴다.
 - RLS 검증은 `execute_sql`에서 `begin; set local role authenticated; select set_config('request.jwt.claims', ...); ... rollback;` 방식으로 다른 사용자를 흉내 내서 확인한다.
