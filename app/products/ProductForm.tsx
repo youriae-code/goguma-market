@@ -6,6 +6,7 @@ import { CATEGORIES, LIMITS, STATUSES, type Product } from "@/lib/products";
 import type { ProductFormState } from "./actions";
 import FormField from "@/components/FormField";
 import FormMessage from "@/components/FormMessage";
+import PriceInput from "@/components/PriceInput";
 import SubmitButton from "@/components/SubmitButton";
 
 const inputClass =
@@ -64,18 +65,7 @@ export default function ProductForm({
         </select>
       </label>
 
-      <FormField
-        label="가격 (원)"
-        name="price"
-        type="number"
-        inputMode="numeric"
-        min={0}
-        max={LIMITS.priceMax}
-        step={1}
-        placeholder="0 을 입력하면 나눔이에요 🧡"
-        defaultValue={v.price}
-        required
-      />
+      <PriceInput defaultValue={v.price} />
 
       {/* 판매 상태는 수정할 때만 바꿀 수 있어요. 새 글은 항상 "판매중" */}
       {isEdit && (
