@@ -49,8 +49,11 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
     - 사용자가 사진을 올려 두고 저장하지 않은 채 떠나면 고아 파일이 남을 수 있다. (현재는 정리 기능이 없다)
     - 샘플 판매글 10개(id 6~15)는 테스트 계정 "테스트고구마" 이름으로 들어가 있다. 넣는 SQL과 지우는 SQL은 `supabase/seed-sample-products.sql`에 있다. 사용자가 직접 쓴 글("달콤한고구마")은 건드리지 않는다.
     - DB가 하나라서 샘플 데이터는 로컬과 운영 사이트에 **동시에** 보인다.
-    - 샘플 글에는 사진이 1~3장씩(총 17장) 있다. 실제 사진이 아니라 canvas로 그린 파스텔 일러스트(이모지 + 라벨)다. 테스트 계정 폴더에 업로드되어 있다.
-    - 샘플 사진은 localhost에서 테스트 계정으로 로그인한 상태로 올렸다. 브라우저 세션 토큰으로 Storage REST에 POST하고, SQL로 `images`를 채웠다.
+    - 샘플 글에는 **Unsplash 무료 라이선스 실사 사진**이 있다. 대부분 1장이고, 6·13·14번은 2장, 9·11번은 3장으로 총 17장이다. 테스트 계정 폴더에 있다. 출처와 작가는 `supabase/sample-photo-credits.md`에 있다.
+      - 처음에는 canvas 일러스트 17장이었는데, 사용자 요청으로 실사로 바꾸고 일러스트는 Storage에서 지웠다.
+      - "아기 바운서"는 마땅한 실사가 없어서 10번 글을 "아기 그네 의자 (실내용)"로 바꿨다.
+      - 외부 사진을 받기 전에는 출처, 장수, 크기를 알리고 사용자 허락을 받는다. Unsplash+(유료) 사진은 쓰지 않는다.
+    - 샘플 사진은 localhost에서 테스트 계정으로 로그인한 상태로 올렸다. 브라우저 세션 토큰으로 Storage REST에 POST(삭제는 DELETE + `prefixes`)하고, SQL로 `images`를 채웠다.
     - SQL로 updated_at을 되돌릴 때는 `products_set_updated_at` 트리거를 잠깐 disable했다가 다시 enable해야 한다. 안 그러면 트리거가 now()로 덮어써서 "수정됨"으로 보인다.
 - 키: 코드와 Vercel에는 **publishable 키만** 쓴다. `service_role`/secret 키는 절대 코드, 커밋, 클라이언트에 넣지 않는다.
 - 인증 설정의 현재 상태:
