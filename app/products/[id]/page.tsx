@@ -7,6 +7,7 @@ import { getProduct, parseProductId } from "@/lib/product-queries";
 import { formatPrice, getCategory, getStatus, timeAgo } from "@/lib/products";
 import GogumaIcon from "@/components/GogumaIcon";
 import DeleteButton from "./DeleteButton";
+import ImageGallery from "./ImageGallery";
 
 export const metadata: Metadata = { title: "판매글 | 고구마마켓" };
 
@@ -39,10 +40,14 @@ async function ProductDetail({ params }: Pick<PageProps<"/products/[id]">, "para
 
   return (
     <article className="overflow-hidden rounded-[2rem] border-2 border-white bg-white/80 shadow-soft">
-      {/* 사진 자리 (사진 기능은 다음 단계) */}
-      <div className={`${category.bg} flex aspect-[2/1] items-center justify-center text-8xl`}>
-        {category.emoji}
-      </div>
+      {/* 사진이 있으면 갤러리, 없으면 카테고리 이모지 */}
+      {product.images.length > 0 ? (
+        <ImageGallery images={product.images} title={product.title} />
+      ) : (
+        <div className={`${category.bg} flex aspect-[2/1] items-center justify-center text-8xl`}>
+          {category.emoji}
+        </div>
+      )}
 
       <div className="p-6 sm:p-8">
         {/* 판매자 */}

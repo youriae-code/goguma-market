@@ -21,7 +21,7 @@ npm run dev
 
 - [x] **1단계: 회원가입 / 로그인 / 로그아웃**
 - [x] **2단계: 판매글 CRUD** (쓰기 · 목록/상세 · 수정 · 삭제, 사진 없이)
-- [ ] 3단계: 사진 업로드 (Supabase Storage)
+- [x] **3단계: 사진 업로드** (여러 장, Supabase Storage)
 - [ ] 4단계: 찜하기, 채팅 …
 
 ## 1단계에서 만든 것
@@ -85,6 +85,32 @@ npm run dev
 | `created_at`, `updated_at` | 작성·수정 시각 (`updated_at` 은 트리거가 자동 갱신) |
 
 RLS: 읽기는 누구나 / 쓰기·수정·삭제는 **본인 글만**. (화면에서 버튼을 숨기는 것만으로는 부족하고, DB 가 최종으로 막아줘요.)
+
+## 3단계에서 만든 것 — 사진 여러 장 올리기
+
+**흐름:** 사진 고르기 → 브라우저에서 미리보기 → 저장 버튼 → **브라우저가 사진을 줄여서 Storage 에 직접 업로드** → 저장된 경로만 서버 액션으로 전송 → DB 에 경로 목록 저장
+
+- 서버 액션을 거치지 않고 브라우저가 바로 올리는 이유: 서버 액션은 보낼 수 있는 크기 제한(기본 1MB, Vercel 4.5MB)이 있어서 휴대폰 사진 여러 장은 넘쳐요.
+- 올리기 전에 긴 변 1600px, JPEG 로 줄여요 (5MB 사진 → 수백 KB).
+- 최대 10장, 첫 번째 사진이 대표 사진. "대표로" 버튼으로 바꿀 수 있어요.
+- 수정하면서 뺀 사진, 삭제한 글의 사진은 Storage 에서도 지워요.
+
+| 파일 | 하는 일 |
+| --- | --- |
+| `components/ImageUploader.tsx` | 사진 고르기·미리보기·빼기·대표 사진 정하기 |
+| `lib/image-upload.ts` | 사진 줄이기(canvas) + Storage 업로드 (브라우저) |
+| `app/products/ProductForm.tsx` | 저장할 때 새 사진을 먼저 올리고 서버 액션 호출 |
+| `app/products/actions.ts` | 사진 경로 검사, 빠진 사진 Storage 에서 삭제 |
+| `app/products/[id]/ImageGallery.tsx` | 상세 화면 사진 넘겨보기 + 썸네일 |
+| `components/ProductCard.tsx` | 목록에 대표 사진 + 사진 수 표시 |
+| `next.config.ts` | `next/image` 가 Supabase Storage 사진을 쓸 수 있게 허용 |
+
+### Storage
+
+- 버킷 `goguma-products` (공개 읽기, 1장당 5MB, jpeg/png/webp/gif 만)
+- 파일 경로: `내 유저 id/랜덤이름.jpg`
+- 보안 규칙: **내 id 폴더에만** 올리고 지울 수 있어요. 다른 사람 폴더는 목록도 안 보여요.
+- `products.images` (text 배열, 최대 10개): 사진 경로 목록. 순서 = 보여주는 순서
 
 ## 배포
 

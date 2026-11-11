@@ -54,6 +54,8 @@ export type Product = {
   price: number;
   category: Category;
   status: ProductStatus;
+  /** Storage 안의 사진 경로 목록. 첫 번째가 대표 사진 */
+  images: string[];
   created_at: string;
   updated_at: string;
   seller: { nickname: string } | null;
@@ -64,9 +66,20 @@ export type ProductSummary = Omit<Product, "description" | "updated_at" | "selle
 
 // Supabase select 에 넣는 문자열. seller:profiles(nickname) 은 "작성자 닉네임을 같이 가져와" 라는 뜻이에요.
 export const PRODUCT_SUMMARY_COLUMNS =
-  "id, title, price, category, status, created_at, seller:profiles(nickname)";
+  "id, title, price, category, status, images, created_at, seller:profiles(nickname)";
 export const PRODUCT_DETAIL_COLUMNS =
-  "id, seller_id, title, description, price, category, status, created_at, updated_at, seller:profiles(nickname)";
+  "id, seller_id, title, description, price, category, status, images, created_at, updated_at, seller:profiles(nickname)";
+
+// ---------------- 사진 ----------------
+/** 사진을 저장하는 Supabase Storage 버킷 이름 */
+export const IMAGE_BUCKET = "goguma-products";
+/** 판매글 하나에 올릴 수 있는 최대 사진 수 (DB check 제약조건과 같아요) */
+export const MAX_IMAGES = 10;
+
+/** Storage 경로("유저id/파일.jpg") → 브라우저에서 볼 수 있는 공개 주소 */
+export function getImageUrl(path: string) {
+  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${IMAGE_BUCKET}/${path}`;
+}
 
 // ---------------- 입력값 제한 (DB 제약조건과 맞춰요) ----------------
 export const LIMITS = {

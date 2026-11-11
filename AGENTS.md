@@ -40,7 +40,13 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
     - 트리거 `products_set_updated_at`(함수 `goguma_set_updated_at`)이 updated_at을 자동으로 갱신한다.
     - RLS: 조회는 누구나 할 수 있고, insert/update/delete는 본인 글만 할 수 있다.
     - category와 status 값은 DB의 check 제약조건과 `lib/products.ts`의 `CATEGORIES`/`STATUSES`가 **항상 같아야 한다.** 하나를 바꾸면 둘 다 바꾼다.
-    - **사진 컬럼은 아직 없다.** 사진은 다음 단계(Supabase Storage)에서 추가한다.
+    - `images text[]`(최대 10개, check 제약조건): Storage 경로 목록이다. 첫 번째가 대표 사진이다. 샘플 데이터는 사진 없이 `{}`이다.
+  - Storage 버킷 `goguma-products`(3단계): 공개 읽기, 5MB, jpeg/png/webp/gif만 받는다.
+    - 경로 규칙은 `{auth.uid()}/{uuid}.jpg`이다. storage.objects 정책(`goguma: ...` 3개)이 **내 폴더에서만** insert/select/delete를 허용한다. remove()에는 select 권한도 필요하다.
+    - Storage 파일은 SQL로 직접 지울 수 없다(`storage.protect_delete`). 반드시 Storage API(`.remove()`)를 쓴다.
+    - 사진은 **브라우저가 직접 업로드**한다(`lib/image-upload.ts`). 서버 액션의 크기 제한 때문이다. 서버 액션은 경로만 받고, `readImagePaths`로 "내 id 폴더" 경로인지 검사한다.
+    - 글을 수정하면서 빠진 사진이나 삭제된 글의 사진은 서버 액션이 Storage에서 지운다. 글 저장이 실패하면 방금 올린 사진도 지운다.
+    - 사용자가 사진을 올려 두고 저장하지 않은 채 떠나면 고아 파일이 남을 수 있다. (현재는 정리 기능이 없다)
     - 샘플 판매글 10개(id 6~15)는 테스트 계정 "테스트고구마" 이름으로 들어가 있다. 넣는 SQL과 지우는 SQL은 `supabase/seed-sample-products.sql`에 있다. 사용자가 직접 쓴 글("달콤한고구마")은 건드리지 않는다.
     - DB가 하나라서 샘플 데이터는 로컬과 운영 사이트에 **동시에** 보인다.
 - 키: 코드와 Vercel에는 **publishable 키만** 쓴다. `service_role`/secret 키는 절대 코드, 커밋, 클라이언트에 넣지 않는다.
@@ -78,6 +84,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - 브라우저 패널이 숨겨져 있으면 `requestAnimationFrame`이 멈춰서 `<Suspense>` 내용이 화면에 안 바뀌어 보인다. 앱 버그가 아니다.
 - 확인 순서: `npm run lint` → `npx tsc --noEmit` → `npm run build`.
 - 이 PC의 시계는 DB(Supabase)보다 약 2분 빠르다. 로컬에서 방금 쓴 글이 "2분 전"으로 보여도 버그가 아니다. Vercel에서는 정상으로 보인다.
+- `next.config.ts`를 바꾸면 개발 서버를 재시작해야 반영된다.
+- 사진 업로드를 브라우저로 테스트할 때는 canvas로 이미지를 만든다. 그다음 `DataTransfer`로 `input[type=file].files`에 넣고 `change` 이벤트를 보낸다.
 - 브라우저로 삭제를 테스트할 때는 `confirm()` 창이 뜬다. 자동 테스트에서는 `window.confirm = () => true`로 넘긴다.
 - RLS 검증은 `execute_sql`에서 `begin; set local role authenticated; select set_config('request.jwt.claims', ...); ... rollback;` 방식으로 다른 사용자를 흉내 내서 확인한다.
 

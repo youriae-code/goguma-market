@@ -1,13 +1,26 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { CATEGORIES, LIMITS, STATUSES, type Product } from "@/lib/products";
+import { CATEGORIES, getImageUrl, LIMITS, STATUSES, type Product } from "@/lib/products";
+import { removeUploadedImages, uploadProductImage } from "@/lib/image-upload";
 import type { ProductFormState } from "./actions";
 import FormField from "@/components/FormField";
 import FormMessage from "@/components/FormMessage";
+import ImageUploader, { type ImageItem } from "@/components/ImageUploader";
 import PriceInput from "@/components/PriceInput";
 import SubmitButton from "@/components/SubmitButton";
+
+/** 에러가 났을 때 다시 채워줄 입력값 (폼에서 꺼내요) */
+function readValues(formData: FormData): ProductFormState["values"] {
+  return {
+    title: String(formData.get("title") ?? ""),
+    description: String(formData.get("description") ?? ""),
+    price: String(formData.get("price") ?? "").replaceAll(",", ""),
+    category: String(formData.get("category") ?? ""),
+    status: String(formData.get("status") ?? "selling"),
+  };
+}
 
 const inputClass =
   "w-full rounded-2xl border-2 border-peach bg-cream px-4 py-3 text-ink outline-none transition placeholder:text-muted/70 focus:border-goguma focus:bg-white focus:ring-4 focus:ring-lavender";
@@ -26,7 +39,48 @@ export default function ProductForm({
   product?: Product;
   cancelHref: string;
 }) {
-  const [state, formAction, pending] = useActionState(action, {});
+  // 사진 목록. 수정할 때는 기존 사진으로 시작해요.
+  const [images, setImages] = useState<ImageItem[]>(() =>
+    (product?.images ?? []).map((path) => ({ id: path, path, preview: getImageUrl(path) })),
+  );
+  // 제출 함수 안에서 항상 "최신" 사진 목록을 보기 위해 ref 에도 담아 둬요.
+  const imagesRef = useRef(images);
+  useEffect(() => {
+    imagesRef.current = images;
+  }, [images]);
+
+  /**
+   * 저장 버튼을 누르면 실행돼요 (브라우저에서).
+   * 1) 새로 고른 사진을 Storage 에 올리고
+   * 2) 모든 사진 경로를 formData 에 붙여서
+   * 3) 서버 액션(action)을 불러요.
+   */
+  async function submit(prev: ProductFormState, formData: FormData): Promise<ProductFormState> {
+    const newlyUploaded: string[] = [];
+    const finalImages: ImageItem[] = [];
+    try {
+      for (const item of imagesRef.current) {
+        if (item.path) {
+          finalImages.push(item); // 이미 올라간 사진
+          continue;
+        }
+        const path = await uploadProductImage(item.file!);
+        newlyUploaded.push(path);
+        finalImages.push({ ...item, path });
+      }
+    } catch (e) {
+      // 몇 장만 올라가고 실패했다면, 올라간 사진은 지워서 깔끔하게 해요.
+      await removeUploadedImages(newlyUploaded);
+      return { error: e instanceof Error ? e.message : "사진을 올리지 못했어요.", values: readValues(formData) };
+    }
+
+    // 다시 저장할 때 같은 사진을 또 올리지 않도록, 올라간 경로를 기억해 둬요.
+    setImages(finalImages);
+    finalImages.forEach((item) => formData.append("images", item.path!));
+    return action(prev, formData);
+  }
+
+  const [state, formAction, pending] = useActionState(submit, {});
 
   // 에러로 돌아왔으면 방금 입력한 값을, 아니면 원래 글의 값을 채워 넣어요.
   const v = state.values ?? {
@@ -41,6 +95,8 @@ export default function ProductForm({
   return (
     // key: 에러로 돌아올 때마다 폼을 새로 그려서 defaultValue 가 다시 적용되게 해요.
     <form key={JSON.stringify(state.values ?? {})} action={formAction} className="space-y-5">
+      <ImageUploader items={images} onChange={setImages} disabled={pending} />
+
       <FormField
         label="제목"
         name="title"
@@ -113,7 +169,10 @@ export default function ProductForm({
           취소
         </Link>
         <div className="flex-[2]">
-          <SubmitButton pending={pending} pendingText="저장하는 중…">
+          <SubmitButton
+            pending={pending}
+            pendingText={images.some((item) => !item.path) ? "사진 올리는 중… 📷" : "저장하는 중…"}
+          >
             {isEdit ? "수정 완료" : "글 올리기 🍠"}
           </SubmitButton>
         </div>
